@@ -2,13 +2,17 @@
 
 var target = Argument("target", "Default");
 var nugetConfig = Argument("nuget_config", "NuGet.Config");
+
+var configuration = Argument("build_config", "Release");
+
+var runEnv = Argument("env", "Production");
+
 string dockerImageName = Argument("image_name", string.Empty);
 
 using System;
 using System.Diagnostics;
 
 // Variables
-var configuration = "Release";
 var netCoreTarget = "netcoreapp2.1";
 
 string codefictionProxy = "./src/CodefictionTech.Proxy/CodefictionTech.Proxy.csproj";
@@ -64,7 +68,7 @@ Task("Docker-Build")
         Information(publishFolder);
 
         DockerImageBuildSettings settings = new DockerImageBuildSettings();
-        settings.BuildArg = new [] {$"publishFolder={publishFolder}", $"aspnetCoreEnv=Production"};
+        settings.BuildArg = new [] {$"publishFolder={publishFolder}", $"aspnetCoreEnv={runEnv}"};
         settings.WorkingDirectory = "./src/CodefictionTech.Proxy";
         settings.File = "./Dockerfile";
         settings.Tag = new [] {dockerImageName};
