@@ -19,7 +19,7 @@ namespace CodefictionTech.Proxy.Core
             };
 
             services.AddSingleton(sharedProxyOptions);
-            services.AddHttpClient<ProxyService>().ConfigurePrimaryHttpMessageHandler(() => sharedProxyOptions.MessageHandler);
+            services.AddHttpClient<ProxyHttpClient>().ConfigurePrimaryHttpMessageHandler(() => sharedProxyOptions.MessageHandler);
 
             return services;
         }

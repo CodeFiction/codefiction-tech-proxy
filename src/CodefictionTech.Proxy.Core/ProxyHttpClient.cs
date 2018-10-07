@@ -3,9 +3,9 @@ using System.Net.Http;
 
 namespace CodefictionTech.Proxy.Core
 {
-    public class ProxyService
+    public class ProxyHttpClient
     {
-        public ProxyService(HttpClient httpClient, SharedProxyOptions sharedProxyOptions)
+        public ProxyHttpClient(HttpClient httpClient, SharedProxyOptions sharedProxyOptions)
         {
             Options = sharedProxyOptions ?? throw new ArgumentNullException(nameof(sharedProxyOptions));
 
