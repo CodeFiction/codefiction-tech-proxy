@@ -10,12 +10,10 @@ using Newtonsoft.Json;
 
 namespace CodefictionTech.Proxy.Tests
 {
-    public class ValuesControllerTests
+    public class KeepAliveControllerTests
     {
-
-
         [Fact]
-        public async Task TestGet()
+        public async Task HealthCheck_Should_Return_Ok_With_String_Message()
         {
             var lambdaFunction = new LambdaEntryPoint();
 
@@ -25,11 +23,9 @@ namespace CodefictionTech.Proxy.Tests
             var response = await lambdaFunction.FunctionHandlerAsync(request, context);
 
             Assert.Equal(200, response.StatusCode);
-            Assert.Equal("[\"value1\",\"value2\"]", response.Body);
+            Assert.Equal("OK!", response.Body);
             Assert.True(response.Headers.ContainsKey("Content-Type"));
             Assert.Equal("application/json; charset=utf-8", response.Headers["Content-Type"]);
         }
-
-
     }
 }

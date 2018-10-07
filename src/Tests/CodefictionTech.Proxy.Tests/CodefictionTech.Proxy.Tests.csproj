@@ -13,9 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="SampleRequests\KeepAliveController-Get.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="SampleRequests\KeepAliveController-Get.json" />
   </ItemGroup>  
 
   <ItemGroup>

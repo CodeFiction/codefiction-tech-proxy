@@ -1,11 +1,11 @@
 ﻿{
   "resource": "/{proxy+}",
-  "path": "/api/values",
+  "path": "/api/keepalive/health_check",
   "httpMethod": "GET",
   "headers": null,
   "queryStringParameters": null,
   "pathParameters": {
-    "proxy": "api/values"
+    "proxy": "/api/keepalive/health_check"
   },
   "stageVariables": null,
   "requestContext": {
