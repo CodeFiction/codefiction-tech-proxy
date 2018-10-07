@@ -19,7 +19,7 @@ namespace CodefictionTech.Proxy.Tests
         {
             var lambdaFunction = new LambdaEntryPoint();
 
-            var requestStr = File.ReadAllText("./SampleRequests/ValuesController-Get.json");
+            var requestStr = File.ReadAllText("./SampleRequests/KeepAliveController-Get.json");
             var request = JsonConvert.DeserializeObject<APIGatewayProxyRequest>(requestStr);
             var context = new TestLambdaContext();
             var response = await lambdaFunction.FunctionHandlerAsync(request, context);

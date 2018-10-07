@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -30,8 +29,7 @@ namespace CodefictionTech.Proxy.Core.Tests
                     {
                         Sender = req =>
                         {
-                            IEnumerable<string> hostValue;
-                            req.Headers.TryGetValues("Host", out hostValue);
+                            req.Headers.TryGetValues("Host", out var hostValue);
                             Assert.Equal("localhost:" + Port, hostValue.Single());
                             Assert.Equal("http://localhost:" + Port + "/", req.RequestUri.ToString());
                             Assert.Equal(new HttpMethod(MethodType), req.Method);
@@ -53,8 +51,7 @@ namespace CodefictionTech.Proxy.Core.Tests
             var responseContent = responseMessage.Content.ReadAsStringAsync();
             Assert.True(responseContent.Wait(3000) && !responseContent.IsFaulted);
             Assert.Equal("Response Body", responseContent.Result);
-            IEnumerable<string> testHeaderValue;
-            responseMessage.Headers.TryGetValues("testHeader", out testHeaderValue);
+            responseMessage.Headers.TryGetValues("testHeader", out var testHeaderValue);
             Assert.Equal("testHeaderValue", testHeaderValue.Single());
         }
 
@@ -80,10 +77,8 @@ namespace CodefictionTech.Proxy.Core.Tests
                     {
                         Sender = req =>
                         {
-                            IEnumerable<string> hostValue;
-                            req.Headers.TryGetValues("Host", out hostValue);
-                            IEnumerable<string> forwardedHostValue;
-                            req.Headers.TryGetValues("X-Forwarded-Host", out forwardedHostValue);
+                            req.Headers.TryGetValues("Host", out var hostValue);
+                            req.Headers.TryGetValues("X-Forwarded-Host", out var forwardedHostValue);
                             Assert.Equal(hostHeader, forwardedHostValue.Single());
                             Assert.Equal("localhost:" + Port, hostValue.Single());
                             Assert.Equal("http://localhost:" + Port + "/", req.RequestUri.ToString());
@@ -122,12 +117,7 @@ namespace CodefictionTech.Proxy.Core.Tests
 
             protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                if (Sender != null)
-                {
-                    return Task.FromResult(Sender(request));
-                }
-
-                return Task.FromResult<HttpResponseMessage>(null);
+                return Sender != null ? Task.FromResult(Sender(request)) : Task.FromResult<HttpResponseMessage>(null);
             }
         }
     }

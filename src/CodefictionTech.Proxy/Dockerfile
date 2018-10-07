@@ -1,4 +1,4 @@
-FROM microsoft/dotnet:2.1.5-aspnetcore-runtime-alpine3.7
+FROM microsoft/dotnet:2.1.5-aspnetcore-runtime
 ARG publishFolder
 ARG aspnetCoreEnv
 WORKDIR /app

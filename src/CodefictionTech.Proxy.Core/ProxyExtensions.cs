@@ -89,39 +89,46 @@ namespace CodefictionTech.Proxy.Core
                 throw new ArgumentNullException(nameof(destinationUri));
             }
 
-            var proxyService = context.RequestServices.GetRequiredService<ProxyService>();
-
-            using (var requestMessage = context.CreateProxyHttpRequest(destinationUri))
+            if (context.WebSockets.IsWebSocketRequest)
             {
-                var prepareRequestHandler = proxyService.Options.PrepareRequest;
+                await context.AcceptProxyWebSocketRequest(destinationUri.ToWebSocketScheme());
+            }
+            else
+            {
+                var proxyService = context.RequestServices.GetRequiredService<ProxyService>();
 
-                if (prepareRequestHandler != null)
+                using (var requestMessage = context.CreateProxyHttpRequest(destinationUri))
                 {
-                    await prepareRequestHandler(context.Request, requestMessage);
-                }
+                    var prepareRequestHandler = proxyService.Options.PrepareRequest;
 
-                using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
-                {
-                    var beforeCopyProxyHttpResponseHandler = proxyService.Options.BeforeCopyProxyHttpResponse;
-                    var copyProxyHttpResponseOverrideHandler = proxyService.Options.CopyProxyHttpResponseOverride;
-
-                    if (beforeCopyProxyHttpResponseHandler != null)
+                    if (prepareRequestHandler != null)
                     {
-                        await beforeCopyProxyHttpResponseHandler(responseMessage);
+                        await prepareRequestHandler(context.Request, requestMessage);
                     }
 
-                    context.CopyResponseMessageHeadersToHttpResponse(responseMessage);
-
-                    if (copyProxyHttpResponseOverrideHandler == null)
+                    using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
                     {
-                        using (var responseStream = await responseMessage.Content.ReadAsStreamAsync())
+                        var beforeCopyProxyHttpResponseHandler = proxyService.Options.BeforeCopyProxyHttpResponse;
+                        var copyProxyHttpResponseOverrideHandler = proxyService.Options.CopyProxyHttpResponseOverride;
+
+                        if (beforeCopyProxyHttpResponseHandler != null)
                         {
-                            await responseStream.CopyToAsync(context.Response.Body, StreamCopyBufferSize, context.RequestAborted);
+                            await beforeCopyProxyHttpResponseHandler(responseMessage);
                         }
-                    }
-                    else
-                    {
-                        await copyProxyHttpResponseOverrideHandler(context, responseMessage);
+
+                        context.CopyResponseMessageHeadersToHttpResponse(responseMessage);
+
+                        if (copyProxyHttpResponseOverrideHandler == null)
+                        {
+                            using (var responseStream = await responseMessage.Content.ReadAsStreamAsync())
+                            {
+                                await responseStream.CopyToAsync(context.Response.Body, StreamCopyBufferSize, context.RequestAborted);
+                            }
+                        }
+                        else
+                        {
+                            await copyProxyHttpResponseOverrideHandler(context, responseMessage);
+                        }
                     }
                 }
             }

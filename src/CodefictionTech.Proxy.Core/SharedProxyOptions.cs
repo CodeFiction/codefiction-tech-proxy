@@ -10,6 +10,8 @@ namespace CodefictionTech.Proxy.Core
     /// </summary>
     public class SharedProxyOptions
     {
+        private int? _webSocketBufferSize;
+
         /// <summary>
         /// Message handler used for http message forwarding.
         /// </summary>
@@ -29,5 +31,26 @@ namespace CodefictionTech.Proxy.Core
         /// Allows to modify response after it is sent to the CopyResponseMessageHeadersToHttpResponse.
         /// </summary>
         public Func<HttpContext, HttpResponseMessage, Task> CopyProxyHttpResponseOverride { get; set; }
+
+        /// <summary>
+        /// Keep-alive interval for proxied Web Socket connections.
+        /// </summary>
+        public TimeSpan? WebSocketKeepAliveInterval { get; set; }
+
+        /// <summary>
+        /// Internal send and receive buffers size for proxied Web Socket connections.
+        /// </summary>
+        public int? WebSocketBufferSize
+        {
+            get => _webSocketBufferSize;
+            set
+            {
+                if (value.HasValue && value.Value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+                _webSocketBufferSize = value;
+            }
+        }
     }
 }

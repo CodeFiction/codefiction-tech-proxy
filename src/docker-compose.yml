@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   codefictiontech.proxy:
-    image: ${DOCKER_REGISTRY}codefictiontechproxy
+    image: codefictiontechproxy
     build:
       context: .
-      dockerfile: CodefictionTech.Proxy/Dockerfile.Development
+      dockerfile: ./CodefictionTech.Proxy/Dockerfile.development

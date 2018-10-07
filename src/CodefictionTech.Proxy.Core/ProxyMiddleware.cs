@@ -11,8 +11,12 @@ namespace CodefictionTech.Proxy.Core
     /// </summary>
     public class ProxyMiddleware
     {
+        private const int DefaultWebSocketBufferSize = 4096;
+
         private readonly RequestDelegate _next;
         private readonly ProxyOptions _options;
+
+        private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
 
         public ProxyMiddleware(RequestDelegate next, IOptions<ProxyOptions> options)
         {

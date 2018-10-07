@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -8,7 +7,6 @@ using System.Threading.Tasks;
 using CodefictionTech.Proxy.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,8 +24,6 @@ namespace CodefictionTech.Proxy
         // This method gets called by the runtime. Use this method to add services to the container
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
             services.AddProxy(() =>
             {
                 var options = new SharedProxyOptions();
@@ -41,7 +37,7 @@ namespace CodefictionTech.Proxy
 
                 options.PrepareRequest = (originalRequest, httpRequestMessage) =>
                 {
-                    //message.Headers.Add("X-Forwarded-Host", originalRequest.Host.Host);
+                    // httpRequestMessage.Headers.Add("X-Forwarded-Host", originalRequest.Host.Host);
                     return Task.FromResult(0);
                 };
 
@@ -90,6 +86,7 @@ namespace CodefictionTech.Proxy
                 return options;
             });
 
+            services.AddMvc();
             services.AddResponseCompression();
         }
 
@@ -105,9 +102,18 @@ namespace CodefictionTech.Proxy
             //    app.UseHsts();
             //}
 
+            app.UseCors(x =>
+            {
+                x.AllowAnyHeader();
+                x.AllowAnyMethod();
+                x.AllowAnyOrigin();
+            });
+
             app.UseDeveloperExceptionPage()
                 .UseResponseCompression()
                 .UseHttpsRedirection()
+                .UseMvc()
+                .UseWebSockets()
                 .RunProxy(new Uri("https://codefiction.simplecast.fm/"));
         }
     }
