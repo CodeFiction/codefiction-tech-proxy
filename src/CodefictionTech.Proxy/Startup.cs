@@ -62,7 +62,7 @@ namespace CodefictionTech.Proxy
                     const int streamCopyBufferSize = 81920;
                     var contentType = originalHttpResponseMessage.Content.Headers.ContentType;
 
-                    if (contentType.MediaType.Contains("text/html") && originalHttpResponseMessage.IsSuccessStatusCode)
+                    if (originalHttpResponseMessage.IsSuccessStatusCode && contentType?.MediaType != null && contentType.MediaType.Contains("text/html"))
                     {
                         var htmlContent = await originalHttpResponseMessage.Content.ReadAsStringAsync();
 
