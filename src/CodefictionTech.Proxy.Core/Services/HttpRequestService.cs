@@ -58,14 +58,14 @@ namespace CodefictionTech.Proxy.Core.Services
             }
         }
 
-        protected virtual async Task BeforeSendRequestToOriginal(HttpRequest httpRequest, HttpRequestMessage httpRequestMessage)
+        protected virtual Task BeforeSendRequestToOriginal(HttpRequest httpRequest, HttpRequestMessage httpRequestMessage)
         {
-            return;
+            return Task.FromResult(0);
         }
 
-        protected virtual async Task BeforeCopyHeadersToResponse(HttpResponseMessage httpResponseMessage)
+        protected virtual Task BeforeCopyHeadersToResponse(HttpResponseMessage httpResponseMessage)
         {
-            return;
+            return Task.FromResult(0);
         }
 
         protected virtual async Task CopyContentToResponse(HttpContext context, HttpResponseMessage httpResponseMessage)
