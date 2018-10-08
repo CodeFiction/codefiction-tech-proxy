@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CodefictionTech.Proxy.Controllers

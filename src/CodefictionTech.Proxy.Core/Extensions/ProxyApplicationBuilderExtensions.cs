@@ -1,11 +1,11 @@
 ﻿using System;
+using CodefictionTech.Proxy.Core.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 
-namespace CodefictionTech.Proxy.Core
+namespace CodefictionTech.Proxy.Core.Extensions
 {
-    public static class ProxyExtensions
+    public static class ProxyApplicationBuilderExtensions
     {
         private const int StreamCopyBufferSize = 81920;
 
@@ -33,7 +33,7 @@ namespace CodefictionTech.Proxy.Core
                 PathBase = baseUri.AbsolutePath,
                 AppendQuery = new QueryString(baseUri.Query)
             };
-            app.UseMiddleware<ProxyMiddleware>(Options.Create(options));
+            app.UseMiddleware<ProxyMiddleware>(Microsoft.Extensions.Options.Options.Create(options));
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace CodefictionTech.Proxy.Core
                 throw new ArgumentNullException(nameof(options));
             }
 
-            app.UseMiddleware<ProxyMiddleware>(Options.Create(options));
+            app.UseMiddleware<ProxyMiddleware>(Microsoft.Extensions.Options.Options.Create(options));
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using CodefictionTech.Proxy.Core.Contracts;
 using Microsoft.AspNetCore.Http;
 
-namespace CodefictionTech.Proxy.Core
+namespace CodefictionTech.Proxy.Core.Services
 {
     public class ProxyRequestService : IProxyRequestService
     {

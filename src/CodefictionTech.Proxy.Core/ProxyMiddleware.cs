@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using CodefictionTech.Proxy.Core.Contracts;
+using CodefictionTech.Proxy.Core.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Options;

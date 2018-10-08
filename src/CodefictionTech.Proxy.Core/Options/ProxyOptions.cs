@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace CodefictionTech.Proxy.Core
+namespace CodefictionTech.Proxy.Core.Options
 {
     /// <summary>
     /// Proxy Options

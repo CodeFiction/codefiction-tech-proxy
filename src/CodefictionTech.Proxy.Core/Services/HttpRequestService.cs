@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -9,15 +10,13 @@ namespace CodefictionTech.Proxy.Core.Services
 {
     public class HttpRequestService : IHttpRequestService
     {
-        private const int StreamCopyBufferSize = 81920;
+        protected const int StreamCopyBufferSize = 81920;
 
         private readonly HttpClient _httpClient;
-        private readonly SharedProxyOptions _sharedProxyOptions;
 
-        public HttpRequestService(HttpClient httpClient, SharedProxyOptions sharedProxyOptions)
+        public HttpRequestService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _sharedProxyOptions = sharedProxyOptions;
         }
 
         public async Task SendProxyHttpRequest(HttpContext context, Uri destinationUri)
@@ -34,37 +33,46 @@ namespace CodefictionTech.Proxy.Core.Services
 
             using (var requestMessage = CreateProxyHttpRequest(context, destinationUri))
             {
-                var prepareRequestHandler = _sharedProxyOptions.PrepareRequest;
-
-                if (prepareRequestHandler != null)
-                {
-                    await prepareRequestHandler(context.Request, requestMessage);
-                }
+                await BeforeSendRequestToOriginal(context.Request, requestMessage);
 
                 using (var httpResponseMessage = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted))
                 {
-                    var beforeCopyProxyHttpResponseHandler = _sharedProxyOptions.BeforeCopyProxyHttpResponse;
-                    var copyProxyHttpResponseOverrideHandler = _sharedProxyOptions.CopyProxyHttpResponseOverride;
+                    await BeforeCopyHeadersToResponse(httpResponseMessage);
 
-                    if (beforeCopyProxyHttpResponseHandler != null)
+                    context.Response.StatusCode = (int)httpResponseMessage.StatusCode;
+                    foreach (var header in httpResponseMessage.Headers)
                     {
-                        await beforeCopyProxyHttpResponseHandler(httpResponseMessage);
+                        context.Response.Headers[header.Key] = header.Value.ToArray();
                     }
 
-                    CopyResponseMessageHeadersToHttpResponse(context, httpResponseMessage);
+                    foreach (var header in httpResponseMessage.Content.Headers)
+                    {
+                        context.Response.Headers[header.Key] = header.Value.ToArray();
+                    }
 
-                    if (copyProxyHttpResponseOverrideHandler == null)
-                    {
-                        using (var responseStream = await httpResponseMessage.Content.ReadAsStreamAsync())
-                        {
-                            await responseStream.CopyToAsync(context.Response.Body, StreamCopyBufferSize, context.RequestAborted);
-                        }
-                    }
-                    else
-                    {
-                        await copyProxyHttpResponseOverrideHandler(context, httpResponseMessage);
-                    }
+                    // SendAsync removes chunking from the response. This removes the header so it doesn't expect a chunked response.
+                    context.Response.Headers.Remove("transfer-encoding");
+
+                    await CopyContentToResponse(context, httpResponseMessage);
                 }
+            }
+        }
+
+        protected virtual async Task BeforeSendRequestToOriginal(HttpRequest httpRequest, HttpRequestMessage httpRequestMessage)
+        {
+            return;
+        }
+
+        protected virtual async Task BeforeCopyHeadersToResponse(HttpResponseMessage httpResponseMessage)
+        {
+            return;
+        }
+
+        protected virtual async Task CopyContentToResponse(HttpContext context, HttpResponseMessage httpResponseMessage)
+        {
+            using (Stream responseStream = await httpResponseMessage.Content.ReadAsStreamAsync())
+            {
+                await responseStream.CopyToAsync(context.Response.Body, StreamCopyBufferSize, context.RequestAborted);
             }
         }
 
@@ -97,30 +105,6 @@ namespace CodefictionTech.Proxy.Core.Services
             requestMessage.Method = new HttpMethod(request.Method);
 
             return requestMessage;
-        }
-
-        private static void CopyResponseMessageHeadersToHttpResponse(HttpContext context, HttpResponseMessage responseMessage)
-        {
-            if (responseMessage == null)
-            {
-                throw new ArgumentNullException(nameof(responseMessage));
-            }
-
-            var response = context.Response;
-
-            response.StatusCode = (int)responseMessage.StatusCode;
-            foreach (var header in responseMessage.Headers)
-            {
-                response.Headers[header.Key] = header.Value.ToArray();
-            }
-
-            foreach (var header in responseMessage.Content.Headers)
-            {
-                response.Headers[header.Key] = header.Value.ToArray();
-            }
-
-            // SendAsync removes chunking from the response. This removes the header so it doesn't expect a chunked response.
-            response.Headers.Remove("transfer-encoding");
         }
     }
 }

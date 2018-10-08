@@ -4,20 +4,20 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using CodefictionTech.Proxy.Core.Contracts;
+using CodefictionTech.Proxy.Core.Options;
 using Microsoft.AspNetCore.Http;
 
 namespace CodefictionTech.Proxy.Core.Services
 {
     public class WebSocketRequestService : IWebSocketRequestService
     {
-        private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Accept", "Sec-WebSocket-Protocol", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions" };
-        private const int DefaultWebSocketBufferSize = 4096;
+        private static readonly string[] NotForwardedWebSocketHeaders = { "Connection", "Host", "Upgrade", "Sec-WebSocket-Accept", "Sec-WebSocket-Protocol", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions" };
 
-        private readonly SharedProxyOptions _sharedProxyOptions;
+        private readonly WebSocketOptions _webSocketOptions;
 
-        public WebSocketRequestService(SharedProxyOptions sharedProxyOptions)
+        public WebSocketRequestService(WebSocketOptions webSocketOptions)
         {
-            _sharedProxyOptions = sharedProxyOptions;
+            _webSocketOptions = webSocketOptions;
         }
 
         public async Task<bool> AcceptProxyWebSocketRequest(HttpContext context, Uri destinationUri)
@@ -52,9 +52,9 @@ namespace CodefictionTech.Proxy.Core.Services
                     }
                 }
 
-                if (_sharedProxyOptions.WebSocketKeepAliveInterval.HasValue)
+                if (_webSocketOptions.WebSocketKeepAliveInterval.HasValue)
                 {
-                    client.Options.KeepAliveInterval = _sharedProxyOptions.WebSocketKeepAliveInterval.Value;
+                    client.Options.KeepAliveInterval = _webSocketOptions.WebSocketKeepAliveInterval.Value;
                 }
 
                 try
@@ -69,7 +69,7 @@ namespace CodefictionTech.Proxy.Core.Services
 
                 using (var server = await context.WebSockets.AcceptWebSocketAsync(client.SubProtocol))
                 {
-                    var bufferSize = _sharedProxyOptions.WebSocketBufferSize ?? DefaultWebSocketBufferSize;
+                    var bufferSize = _webSocketOptions.WebSocketBufferSize;
                     await Task.WhenAll(PumpWebSocket(client, server, bufferSize, context.RequestAborted), PumpWebSocket(server, client, bufferSize, context.RequestAborted));
                 }
 
