@@ -35,25 +35,29 @@ namespace CodefictionTech.Proxy.Core.Extensions
                 throw new ArgumentNullException(nameof(services));
             }
 
-            var clientHandler = new HttpClientHandler();
-
-            if (customClientHandlerSetupAction == null)
-            {
-                clientHandler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
-            }
-            else
-            {
-                customClientHandlerSetupAction(clientHandler);
-            }
-
             var webSocketOptions = new WebSocketOptions();
 
             webSocketOptionsSetupAction?.Invoke(webSocketOptions);
 
             services.AddSingleton(webSocketOptions);
             services.AddTransient<IProxyRequestService, ProxyRequestService>();
-            services.AddHttpClient<IHttpRequestService, THttpRequestService>().ConfigurePrimaryHttpMessageHandler(() => clientHandler);
             services.AddTransient<IWebSocketRequestService, TWebSocketService>();
+
+            services.AddHttpClient<IHttpRequestService, THttpRequestService>().ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                var clientHandler = new HttpClientHandler();
+
+                if (customClientHandlerSetupAction == null)
+                {
+                    clientHandler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
+                }
+                else
+                {
+                    customClientHandlerSetupAction(clientHandler);
+                }
+
+                return clientHandler;
+            });
 
             return services;
         }
