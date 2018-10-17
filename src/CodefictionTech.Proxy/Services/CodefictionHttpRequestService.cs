@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -10,6 +11,10 @@ namespace CodefictionTech.Proxy.Services
 {
     public class CodefictionHttpRequestService : HttpRequestService
     {
+        private static readonly string LogRocketScript =
+            @"<script src=""https://cdn.logrocket.io/LogRocket.min.js"" crossorigin=""anonymous""></script>" +
+            @"<script>window.LogRocket && window.LogRocket.init('clyrcf/codefiction-tech');</script>";
+
         public CodefictionHttpRequestService(HttpClient httpClient) 
             : base(httpClient)
         {
@@ -39,6 +44,9 @@ namespace CodefictionTech.Proxy.Services
                 var htmlContent = await originalHttpResponseMessage.Content.ReadAsStringAsync();
 
                 htmlContent = htmlContent.Replace("codefiction.simplecast.fm", originalHost);
+                htmlContent = htmlContent.Insert(htmlContent.IndexOf("<head>", StringComparison.Ordinal) + "<head>".Length, LogRocketScript);
+
+
                 var byteArray = Encoding.UTF8.GetBytes(htmlContent);
 
                 using (var memoryStream = new MemoryStream(byteArray))
