@@ -333,3 +333,8 @@ ASALocalRun/
 
 # Cake
 [Tt]ools/
+
+# terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform
