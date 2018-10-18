@@ -25,6 +25,10 @@ resource "aws_lambda_function" "cf_proxy" {
   timeout = "60"
 
   role = "${aws_iam_role.lambda_exec.arn}"
+
+  tags {
+    Name = "cf_proxy"
+  }
 }
 
 resource "aws_lambda_permission" "cf_proxy_permission_root" {
@@ -76,8 +80,8 @@ resource "aws_iam_role" "lambda_exec" {
 EOF
 }
 
-resource "aws_iam_policy_attachment" "attach-aws-lambda-full-to-lambda-exec" {
-  name = "attach-aws-lambda-full-to-lambda-exe"
+resource "aws_iam_policy_attachment" "attach_aws_lambda_full_to_lambda_exec" {
+  name = "attach_aws_lambda_basic_to_lambda_exec"
   roles = ["${aws_iam_role.lambda_exec.name}"]
-  policy_arn = "arn:aws:iam::aws:policy/AWSLambdaFullAccess"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
