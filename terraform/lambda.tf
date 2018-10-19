@@ -1,6 +1,5 @@
 provider "aws" {
   region = "eu-central-1"
-  profile = "codefiction"
 }
 
 # variable "app_version" { 
@@ -14,8 +13,9 @@ resource "aws_lambda_function" "cf_proxy" {
   function_name = "CodefictionTechProxy"
 
   # The bucket name as created earlier with "aws s3api create-bucket"
-  s3_bucket = "codefiction-tech-proxy-lambda"
-  s3_key    = "publish.zip"
+  s3_bucket = "${var.bucket_name}"
+  s3_key    = "${var.package_name}"
+  # s3_key    = "publish.zip"
 
   # "main" is the filename within the zip file (main.js) and "handler"
   # is the name of the property under which the handler function was
@@ -25,6 +25,8 @@ resource "aws_lambda_function" "cf_proxy" {
   timeout = "60"
 
   role = "${aws_iam_role.lambda_exec.arn}"
+
+  depends_on = ["aws_s3_bucket_object.lambda_package"]
 
   tags {
     Name = "cf_proxy"

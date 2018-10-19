@@ -1,24 +1,28 @@
 #addin "nuget:https://api.nuget.org/v3/index.json?package=Cake.Docker&version=0.9.5"
 
-var target = Argument("target", "Default");
-var nugetConfig = Argument("nuget_config", "NuGet.Config");
-
-var configuration = Argument("build_config", "Release");
-
-var runEnv = Argument("env", "Production");
-
-string dockerImageName = Argument("image_name", string.Empty);
-
+using System.Text.RegularExpressions;
 using System;
 using System.Diagnostics;
 
-// Variables
-var netCoreTarget = "netcoreapp2.1";
+string target = Argument("target", "Default");
+string dockerImageName = Argument("imagename", string.Empty);
+string version = Argument("targetversion", "1.0.0." + (EnvironmentVariable("TRAVIS_BUILD_NUMBER") ?? "0"));
 
+string bucketName = Argument("bucketname", "codefiction-tech-proxy-lambda");
+string packageName = Argument("packagename", "cfproxy.zip");
+
+bool taintApiDeployment = Argument<bool>("taintapigateway", false);
+
+
+// Variables
+string configuration = "Release";
+string netCoreTarget = "netcoreapp2.1";
 string codefictionProxy = "./src/CodefictionTech.Proxy/CodefictionTech.Proxy.csproj";
+string codefictionProxyCore = "./src/CodefictionTech.Proxy.Core/CodefictionTech.Proxy.Core.csproj";
+string publishFolder = $"/bin/{configuration}/{netCoreTarget}/publish";
 
 Task("Default")
-    .IsDependentOn("Docker-Build");
+    .IsDependentOn("Test");
 
 Task("Compile")
     .Description("Builds all the projects in the solution")
@@ -47,8 +51,8 @@ Task("Test")
     });
 
 Task("Publish")
-    .Description("Run Tests")
-    .IsDependentOn("Test")
+    .Description("Publishes Codefiction Proxy Web")
+    .IsDependentOn("Compile")
     .Does(() =>
     {
         DotNetCorePublishSettings publishSettings = new DotNetCorePublishSettings();
@@ -58,17 +62,59 @@ Task("Publish")
         DotNetCorePublish(codefictionProxy, publishSettings);
     });
 
-Task("Docker-Build")
+Task("Package")
+    .Description("Zips up Codefiction proxy web app built binaries for aws lambda")
     .IsDependentOn("Publish")
     .Does(() =>
     {
-        string publishFolder = $"/bin/{configuration}/{netCoreTarget}/publish";
+        var absolutePath = MakeAbsolute(File(codefictionProxy)).GetDirectory().ToString() + publishFolder;
+        var files = GetFiles(absolutePath + "/**/*");
+        var outputPath = File($"./terraform/{packageName}");
 
+        // TODO : add general clean task
+        if(FileExists(outputPath))
+        {
+            Information($"Deleting {packageName}");
+            DeleteFile(outputPath);
+        }
+
+        Information($"Zipping {packageName}");
+        Zip(absolutePath, outputPath, files);
+    });
+
+Task("Publish-AwsLambda")
+    .Description("Publish zip file to AWS Lamda and configure AWS API Gateway")
+    .IsDependentOn("Package")
+    .Does(() =>
+    {
+        if(taintApiDeployment)
+        {
+            StartProcess("terraform", new ProcessSettings {
+                Arguments = "taint aws_api_gateway_deployment.cf_proxy_deploy -auto-approve",
+                WorkingDirectory = "./terraform"
+            });
+        }
+
+        var packagePath = MakeAbsolute(Directory("./terraform") + File($"{packageName}"));
+
+        var processSet =  new ProcessSettings() {
+                Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false -auto-approve",
+                //Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false",
+                WorkingDirectory = "./terraform"
+            };
+
+        StartProcess($"terraform", processSet);
+    });
+
+Task("Docker-Build")
+    .IsDependentOn("Test")
+    .IsDependentOn("Publish")
+    .Does(() =>
+    {
         Information(dockerImageName);
         Information(publishFolder);
 
         DockerImageBuildSettings settings = new DockerImageBuildSettings();
-        settings.BuildArg = new [] {$"publishFolder={publishFolder}", $"aspnetCoreEnv={runEnv}"};
         settings.WorkingDirectory = "./src/CodefictionTech.Proxy";
         settings.File = "./Dockerfile";
         settings.Tag = new [] {dockerImageName};
@@ -76,4 +122,35 @@ Task("Docker-Build")
         DockerBuild(settings, ".");
     });
 
+Task("Update-Version")
+    .Does(() =>
+    {
+        UpdateVersion(codefictionProxy, version);
+    });
+
+
 RunTarget(target);
+
+/*
+/ HELPER METHODS
+*/
+private void UpdateVersion(string csprojPath, string version)
+{
+    Information("Setting version to " + version);
+
+    if(string.IsNullOrWhiteSpace(version))
+    {
+        throw new CakeException("No version specified! You need to pass in --targetversion=\"x.y.z\"");
+    }
+
+    var file =  MakeAbsolute(File(csprojPath));
+
+    Information(file.FullPath);
+
+    var project = System.IO.File.ReadAllText(file.FullPath, Encoding.UTF8);
+
+    var projectVersion = new Regex(@"<Version>.+<\/Version>");
+    project = projectVersion.Replace(project, string.Concat("<Version>", version, "</Version>"));
+
+    System.IO.File.WriteAllText(file.FullPath, project, Encoding.UTF8);
+}
