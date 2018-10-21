@@ -1,5 +1,6 @@
 #addin "nuget:https://api.nuget.org/v3/index.json?package=Cake.Docker&version=0.9.5"
 
+using Path = System.IO.Path;
 using System.Text.RegularExpressions;
 using System;
 using System.Diagnostics;
@@ -7,7 +8,7 @@ using System.Diagnostics;
 // Arguments
 string target = Argument("target", "Default");
 string dockerImageName = Argument("imagename", string.Empty);
-string version = Argument("targetversion", "1.0.0." + (EnvironmentVariable("TRAVIS_BUILD_NUMBER") ?? "0"));
+string version = Argument("targetversion", "1.0.0");
 string bucketName = Argument("bucketname", "codefiction-tech-proxy-lambda");
 bool taintApiDeployment = Argument<bool>("taintapigateway", false);
 
@@ -15,15 +16,13 @@ bool taintApiDeployment = Argument<bool>("taintapigateway", false);
 // Variables
 string configuration = "Release";
 string netCoreTarget = "netcoreapp2.1";
-
-string packageName = "cfProxy-";
+string packageName = "cfProxy";
 
 
 // Directories
 var cfProxyDir = MakeAbsolute(Directory("./src/CodefictionTech.Proxy"));
 var cfProxyPublishDir = cfProxyDir +  Directory($"/bin/{configuration}/{netCoreTarget}/publish");
 var terraformDir = MakeAbsolute(Directory("./terraform"));
-
 string cfProxyProj = cfProxyDir + "/CodefictionTech.Proxy.csproj";
 
 Task("Default")
@@ -72,22 +71,25 @@ Task("Package")
     .IsDependentOn("Publish")
     .Does(() =>
     {
+        string packageNameVersion = GetPackageName();
+
         var files = GetFiles(cfProxyPublishDir + "/**/*");
-        var outputPath = File($"./terraform/{packageName}");
+        var outputPath = Path.Combine(terraformDir.FullPath, packageNameVersion);
 
         // TODO : add general cleaning task
         if(FileExists(outputPath))
         {
-            Information($"Deleting {packageName}");
+            Information($"Deleting {packageNameVersion}");
             DeleteFile(outputPath);
         }
 
-        Information($"Zipping {packageName}");
+        Information($"Zipping {packageNameVersion}");
         Zip(cfProxyPublishDir, outputPath, files);
     });
 
 Task("Publish-AwsLambda")
     .Description("Publish zip file to AWS Lamda and configure AWS API Gateway")
+    .IsDependentOn("Init-Terraform")
     .IsDependentOn("Package")
     .Does(() =>
     {
@@ -95,19 +97,37 @@ Task("Publish-AwsLambda")
         {
             StartProcess("terraform", new ProcessSettings {
                 Arguments = "taint aws_api_gateway_deployment.cf_proxy_deploy -auto-approve",
-                WorkingDirectory = "./terraform"
+                WorkingDirectory = "terraform"
             });
         }
 
-        var packagePath = MakeAbsolute(Directory("./terraform") + File($"{packageName}"));
+        string packageNameVersion = GetPackageName();
+        var packagePath = Path.Combine(terraformDir.FullPath, packageNameVersion);
+        Information($"Package to upload : {packagePath}");
 
         var processSet =  new ProcessSettings() {
-                Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false -auto-approve",
-                //Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false",
-                WorkingDirectory = "./terraform"
+                //Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false -auto-approve",
+                Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false",
+                WorkingDirectory = "terraform"
             };
 
         StartProcess($"terraform", processSet);
+    });
+
+Task("Init-Terraform")
+    .Does(() =>
+    {
+        // string travis = EnvironmentVariable("TRAVIS");
+
+        // if(travis != "true")
+        // {
+        //     return;
+        // }
+
+        StartProcess("terraform", new ProcessSettings {
+            Arguments = "init",
+            WorkingDirectory = "terraform"
+        });
     });
 
 Task("Docker-Build")
@@ -139,8 +159,6 @@ Task("Get-Version")
 
         Information(version);
     });
-
-
 
 RunTarget(target);
 
@@ -180,6 +198,14 @@ private string GetProjectVersion(string csprojPath = null)
     int startIndex = project.IndexOf("<Version>") + "<Version>".Length;
     int endIndex = project.IndexOf("</Version>", startIndex);
 
+    string version = project.Substring(startIndex, endIndex - startIndex);
+    string buildNumber = (EnvironmentVariable("TRAVIS_BUILD_NUMBER")) ?? "0";
+    version = $"{version}.{buildNumber}";
 
-    return project.Substring(startIndex, endIndex - startIndex);
+    return version;
+}
+
+private string GetPackageName()
+{
+    return $"{packageName}-{GetProjectVersion()}.zip";     
 }
