@@ -106,8 +106,8 @@ Task("Publish-AwsLambda")
         Information($"Package to upload : {packagePath}");
 
         var processSet =  new ProcessSettings() {
-                //Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false -auto-approve",
-                Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false",
+                Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false -auto-approve",
+                //Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false",
                 WorkingDirectory = terraformDir
             };
 
