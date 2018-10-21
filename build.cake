@@ -4,22 +4,27 @@ using System.Text.RegularExpressions;
 using System;
 using System.Diagnostics;
 
+// Arguments
 string target = Argument("target", "Default");
 string dockerImageName = Argument("imagename", string.Empty);
 string version = Argument("targetversion", "1.0.0." + (EnvironmentVariable("TRAVIS_BUILD_NUMBER") ?? "0"));
-
 string bucketName = Argument("bucketname", "codefiction-tech-proxy-lambda");
-string packageName = Argument("packagename", "cfproxy.zip");
-
 bool taintApiDeployment = Argument<bool>("taintapigateway", false);
 
 
 // Variables
 string configuration = "Release";
 string netCoreTarget = "netcoreapp2.1";
-string codefictionProxy = "./src/CodefictionTech.Proxy/CodefictionTech.Proxy.csproj";
-string codefictionProxyCore = "./src/CodefictionTech.Proxy.Core/CodefictionTech.Proxy.Core.csproj";
-string publishFolder = $"/bin/{configuration}/{netCoreTarget}/publish";
+
+string packageName = "cfProxy-";
+
+
+// Directories
+var cfProxyDir = MakeAbsolute(Directory("./src/CodefictionTech.Proxy"));
+var cfProxyPublishDir = cfProxyDir +  Directory($"/bin/{configuration}/{netCoreTarget}/publish");
+var terraformDir = MakeAbsolute(Directory("./terraform"));
+
+string cfProxyProj = cfProxyDir + "/CodefictionTech.Proxy.csproj";
 
 Task("Default")
     .IsDependentOn("Test");
@@ -37,9 +42,9 @@ Task("Compile")
         buildSettings.Configuration = configuration;
 
         Information("Restoring project");
-        DotNetCoreRestore(codefictionProxy);
+        DotNetCoreRestore(cfProxyProj);
         Information("Building project");
-        DotNetCoreBuild(codefictionProxy, buildSettings);   
+        DotNetCoreBuild(cfProxyProj, buildSettings);   
     });
 
 Task("Test")
@@ -59,7 +64,7 @@ Task("Publish")
         publishSettings.NoRestore = true;
         publishSettings.Configuration = configuration;
 
-        DotNetCorePublish(codefictionProxy, publishSettings);
+        DotNetCorePublish(cfProxyProj, publishSettings);
     });
 
 Task("Package")
@@ -67,11 +72,10 @@ Task("Package")
     .IsDependentOn("Publish")
     .Does(() =>
     {
-        var absolutePath = MakeAbsolute(File(codefictionProxy)).GetDirectory().ToString() + publishFolder;
-        var files = GetFiles(absolutePath + "/**/*");
+        var files = GetFiles(cfProxyPublishDir + "/**/*");
         var outputPath = File($"./terraform/{packageName}");
 
-        // TODO : add general clean task
+        // TODO : add general cleaning task
         if(FileExists(outputPath))
         {
             Information($"Deleting {packageName}");
@@ -79,7 +83,7 @@ Task("Package")
         }
 
         Information($"Zipping {packageName}");
-        Zip(absolutePath, outputPath, files);
+        Zip(cfProxyPublishDir, outputPath, files);
     });
 
 Task("Publish-AwsLambda")
@@ -111,22 +115,31 @@ Task("Docker-Build")
     .IsDependentOn("Publish")
     .Does(() =>
     {
-        Information(dockerImageName);
-        Information(publishFolder);
+        // Information(dockerImageName);
+        // Information(publishFolder);
 
-        DockerImageBuildSettings settings = new DockerImageBuildSettings();
-        settings.WorkingDirectory = "./src/CodefictionTech.Proxy";
-        settings.File = "./Dockerfile";
-        settings.Tag = new [] {dockerImageName};
+        // DockerImageBuildSettings settings = new DockerImageBuildSettings();
+        // settings.WorkingDirectory = "./src/CodefictionTech.Proxy";
+        // settings.File = "./Dockerfile";
+        // settings.Tag = new [] {dockerImageName};
 
-        DockerBuild(settings, ".");
+        // DockerBuild(settings, ".");
     });
 
 Task("Update-Version")
     .Does(() =>
     {
-        UpdateVersion(codefictionProxy, version);
+        UpdateProjectVersion(version);
     });
+
+Task("Get-Version")
+    .Does(() =>
+    {
+        string version = GetProjectVersion();
+
+        Information(version);
+    });
+
 
 
 RunTarget(target);
@@ -134,7 +147,7 @@ RunTarget(target);
 /*
 / HELPER METHODS
 */
-private void UpdateVersion(string csprojPath, string version)
+private void UpdateProjectVersion(string version, string csprojPath = null)
 {
     Information("Setting version to " + version);
 
@@ -143,6 +156,7 @@ private void UpdateVersion(string csprojPath, string version)
         throw new CakeException("No version specified! You need to pass in --targetversion=\"x.y.z\"");
     }
 
+    csprojPath = csprojPath ?? cfProxyProj;
     var file =  MakeAbsolute(File(csprojPath));
 
     Information(file.FullPath);
@@ -153,4 +167,19 @@ private void UpdateVersion(string csprojPath, string version)
     project = projectVersion.Replace(project, string.Concat("<Version>", version, "</Version>"));
 
     System.IO.File.WriteAllText(file.FullPath, project, Encoding.UTF8);
+}
+
+private string GetProjectVersion(string csprojPath = null)
+{
+    csprojPath = csprojPath ?? cfProxyProj;
+    var file =  MakeAbsolute(File(csprojPath));
+
+    Information(file.FullPath);
+
+    var project = System.IO.File.ReadAllText(file.FullPath, Encoding.UTF8);
+    int startIndex = project.IndexOf("<Version>") + "<Version>".Length;
+    int endIndex = project.IndexOf("</Version>", startIndex);
+
+
+    return project.Substring(startIndex, endIndex - startIndex);
 }
