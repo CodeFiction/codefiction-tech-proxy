@@ -13,6 +13,12 @@ branches:
     - /.*/
 before_script:
   - chmod +x ./build.sh
+before_install:
+  - curl -sLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/0.11.9/terraform_0.11.9_linux_amd64.zip
+  - unzip /tmp/terraform.zip -d /tmp
+  - mkdir ~/bin
+  - mv /tmp/terraform ~/bin
+  - export PATH="~/bin:$PATH"
 script:  
   - ./build.sh
 deploy:

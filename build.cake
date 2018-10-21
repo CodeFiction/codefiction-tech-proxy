@@ -97,7 +97,7 @@ Task("Publish-AwsLambda")
         {
             StartProcess("terraform", new ProcessSettings {
                 Arguments = "taint aws_api_gateway_deployment.cf_proxy_deploy -auto-approve",
-                WorkingDirectory = "terraform"
+                WorkingDirectory = terraformDir
             });
         }
 
@@ -108,7 +108,7 @@ Task("Publish-AwsLambda")
         var processSet =  new ProcessSettings() {
                 //Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageName} -input=false -auto-approve",
                 Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false",
-                WorkingDirectory = "terraform"
+                WorkingDirectory = terraformDir
             };
 
         StartProcess($"terraform", processSet);
@@ -117,16 +117,17 @@ Task("Publish-AwsLambda")
 Task("Init-Terraform")
     .Does(() =>
     {
-        // string travis = EnvironmentVariable("TRAVIS");
+        string travis = EnvironmentVariable("TRAVIS");
 
-        // if(travis != "true")
-        // {
-        //     return;
-        // }
+        if(travis != "true")
+        {
+            return;
+        }
 
+        Information(terraformDir.FullPath);
         StartProcess("terraform", new ProcessSettings {
             Arguments = "init",
-            WorkingDirectory = "terraform"
+            WorkingDirectory = terraformDir
         });
     });
 
