@@ -76,11 +76,6 @@ Task("Package-AwsLambda")
         var files = GetFiles(cfProxyPublishDir + "/**/*");
         var outputPath = Path.Combine(terraformDir.FullPath, packageNameVersion);
 
-        StartProcess("dotnet", new ProcessSettings {
-            Arguments = $"{awsLambdaToolsDir}/dotnet-lambda.dll package --framework {netCoreTarget} -o {outputPath} -c {configuration}",
-            WorkingDirectory = cfProxyDir
-        });
-
         // TODO : add general cleaning task
         if(FileExists(outputPath))
         {
@@ -89,7 +84,11 @@ Task("Package-AwsLambda")
         }
 
         Information($"Zipping {packageNameVersion}");
-        Zip(cfProxyPublishDir, outputPath, files);
+        
+        StartProcess("dotnet", new ProcessSettings {
+            Arguments = $"{awsLambdaToolsDir}/dotnet-lambda.dll package --framework {netCoreTarget} -o {outputPath} -c {configuration}",
+            WorkingDirectory = cfProxyDir
+        });
     });
 
 Task("Publish-AwsLambda")
