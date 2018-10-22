@@ -2,12 +2,10 @@ provider "aws" {
   region = "eu-central-1"
 }
 
-# variable "app_version" { 
-# }
-
-# variable "bucket_postfix" {
-#     default = "test"
-# }
+variable "package_name" {
+    type = "string"
+    description = "Package path to upload S3"
+}
 
 resource "aws_lambda_function" "cf_proxy" {
   function_name = "CodefictionTechProxy"
@@ -15,18 +13,12 @@ resource "aws_lambda_function" "cf_proxy" {
   # The bucket name as created earlier with "aws s3api create-bucket"
   s3_bucket = "${var.bucket_name}"
   s3_key    = "${var.package_name}"
-  # s3_key    = "publish.zip"
 
-  # "main" is the filename within the zip file (main.js) and "handler"
-  # is the name of the property under which the handler function was
-  # exported in that file.
   handler = "CodefictionTech.Proxy::CodefictionTech.Proxy.LambdaEntryPoint::FunctionHandlerAsync"
   runtime = "dotnetcore2.1"  
   timeout = "60"
 
   role = "${aws_iam_role.lambda_exec.arn}"
-
-  depends_on = ["aws_s3_bucket_object.lambda_package"]
 
   tags {
     Name = "cf_proxy"

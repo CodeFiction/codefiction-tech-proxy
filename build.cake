@@ -1,4 +1,5 @@
 #addin "nuget:https://api.nuget.org/v3/index.json?package=Cake.Docker&version=0.9.5"
+#addin "nuget:https://api.nuget.org/v3/index.json?package=Cake.AWS.S3&version=0.6.6"
 
 using Path = System.IO.Path;
 using System.Text.RegularExpressions;
@@ -84,17 +85,37 @@ Task("Package-AwsLambda")
         }
 
         Information($"Zipping {packageNameVersion}");
-        
+
         StartProcess("dotnet", new ProcessSettings {
             Arguments = $"{awsLambdaToolsDir}/dotnet-lambda.dll package --framework {netCoreTarget} -o {outputPath} -c {configuration}",
             WorkingDirectory = cfProxyDir
         });
     });
 
+Task("Upload-Package-S3")
+    .Description("Zips up Codefiction proxy web app built binaries for aws lambda")
+    .IsDependentOn("Package-AwsLambda")
+    .Does(async () =>
+    {
+        string packageNameVersion = GetPackageName();
+        var packagePath = Path.Combine(terraformDir.FullPath, packageNameVersion);
+
+        await S3Upload(packagePath, packageNameVersion, new UploadSettings()
+        {
+            AccessKey = EnvironmentVariable("AWS_ACCESS_KEY_ID"),
+            SecretKey = EnvironmentVariable("AWS_SECRET_ACCESS_KEY"),
+
+            Region = RegionEndpoint.EUCentral1,
+            BucketName = bucketName,
+
+            CannedACL = S3CannedACL.Private
+        });
+    });
+
 Task("Publish-AwsLambda")
     .Description("Publish zip file to AWS Lamda and configure AWS API Gateway")
     .IsDependentOn("Init-Terraform")
-    .IsDependentOn("Package-AwsLambda")
+    .IsDependentOn("Upload-Package-S3")
     .Does(() =>
     {
         if(taintApiDeployment)
@@ -110,8 +131,8 @@ Task("Publish-AwsLambda")
         Information($"Package to upload : {packagePath}");
 
         var processSet =  new ProcessSettings() {
-                Arguments = $"apply -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false -auto-approve",
-                //Arguments = $"plan -var bucket_name={bucketName} -var package_path={packagePath} -var package_name={packageNameVersion} -input=false",
+                Arguments = $"apply -var bucket_name={bucketName} -var package_name={packageNameVersion} -input=false -auto-approve",
+                //Arguments = $"plan -var bucket_name={bucketName} -var package_name={packageNameVersion} -input=false",
                 WorkingDirectory = terraformDir
             };
 
