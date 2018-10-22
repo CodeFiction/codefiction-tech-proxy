@@ -57,10 +57,16 @@ if [ ! -f "$CAKE_EXE" ]; then
         fi
     fi
 
+    AWS_LAMDA_TOOlS=$TOOLS_DIR/amazon.lambda.tools/
+    AWS_LAMDA_TOOlS_VERSION=3.1.0
+
     # Add dependencies
     dotnet add $TOOLS_DIR/tools.csproj package Cake.CoreCLR -v $CAKE_VERSION --package-directory $TOOLS_DIR
+    dotnet add $TOOLS_DIR/tools.csproj package Amazon.Lambda.Tools -v $AWS_LAMDA_TOOlS_VERSION --package-directory $TOOLS_DIR
     mv $TOOLS_DIR/cake.coreclr/$CAKE_VERSION/* $TOOLS_DIR/cake.coreclr/
     rm -rf $TOOLS_DIR/cake.coreclr/$CAKE_VERSION/
+    mv $AWS_LAMDA_TOOlS/$AWS_LAMDA_TOOlS_VERSION/* $TOOLS_DIR/amazon.lambda.tools/
+    rm -rf $AWS_LAMDA_TOOlS/$AWS_LAMDA_TOOlS_VERSION/
     rm -f $TOOLS_DIR/tools.csproj
 fi
 

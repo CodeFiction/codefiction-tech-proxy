@@ -84,7 +84,7 @@ if (!(Test-Path $CAKE_EXE)) {
         Write-Verbose -Message "Creating tools.csproj..."    
         try {        
             New-Item "$TOOLS_DIR/tools.csproj" -ItemType file
-            "<Project Sdk=""Microsoft.NET.Sdk""><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>netcoreapp2.0</TargetFramework></PropertyGroup></Project>" | Out-File -FilePath "$TOOLS_DIR/tools.csproj" -Append
+            "<Project Sdk=""Microsoft.NET.Sdk""><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>netcoreapp2.1</TargetFramework></PropertyGroup></Project>" | Out-File -FilePath "$TOOLS_DIR/tools.csproj" -Append
         }
         catch {
             Throw "Could not download packages.config."
@@ -92,17 +92,23 @@ if (!(Test-Path $CAKE_EXE)) {
     }
 
     $CAKE_NFW = Join-Path $TOOLS_DIR "/cake/"
+    $AWS_LAMDA_TOOlS = Join-Path $TOOLS_DIR "/amazon.lambda.tools/"
+    $AWS_LAMDA_TOOlS_VERSION = "3.1.0"
 
     # Add dependencies
     dotnet add $TOOLS_DIR/tools.csproj package Cake.CoreCLR -v $CAKE_VERSION --package-directory $TOOLS_DIR
     # Add Cake.exe for VsCode intellisense support
     dotnet add $TOOLS_DIR/tools.csproj package Cake -v $CAKE_VERSION --package-directory $TOOLS_DIR
+    # Add Amazon.Lambda.Tools
+    dotnet add $TOOLS_DIR/tools.csproj package Amazon.Lambda.Tools -v $AWS_LAMDA_TOOlS_VERSION --package-directory $TOOLS_DIR
 
     # Clean up
     Move-Item -Path $CAKE_ROOT/$CAKE_VERSION/* -Destination $CAKE_ROOT
     Remove-Item $CAKE_ROOT/$CAKE_VERSION/ -Force -Recurse
     Move-Item -Path $CAKE_NFW/$CAKE_VERSION/* -Destination $CAKE_NFW
     Remove-Item $CAKE_NFW/$CAKE_VERSION/ -Force -Recurse
+    Move-Item -Path $AWS_LAMDA_TOOlS/$AWS_LAMDA_TOOlS_VERSION/* -Destination $AWS_LAMDA_TOOlS
+    Remove-Item $AWS_LAMDA_TOOlS/$AWS_LAMDA_TOOlS_VERSION/ -Force -Recurse
     Remove-Item $TOOLS_DIR/tools.csproj
 }
 

@@ -23,6 +23,7 @@ string packageName = "cfProxy";
 var cfProxyDir = MakeAbsolute(Directory("./src/CodefictionTech.Proxy"));
 var cfProxyPublishDir = cfProxyDir +  Directory($"/bin/{configuration}/{netCoreTarget}/publish");
 var terraformDir = MakeAbsolute(Directory("./terraform"));
+var awsLambdaToolsDir = MakeAbsolute(Directory("./tools/amazon.lambda.tools/tools/netcoreapp2.1/any"));
 string cfProxyProj = cfProxyDir + "/CodefictionTech.Proxy.csproj";
 
 Task("Default")
@@ -76,7 +77,7 @@ Task("Package-AwsLambda")
         var outputPath = Path.Combine(terraformDir.FullPath, packageNameVersion);
 
         StartProcess("dotnet", new ProcessSettings {
-            Arguments = $"lambda package --framework {netCoreTarget} -o {outputPath} -c {configuration}",
+            Arguments = $"{awsLambdaToolsDir}/dotnet-lambda.dll package --framework {netCoreTarget} -o {outputPath} -c {configuration}",
             WorkingDirectory = cfProxyDir
         });
 
