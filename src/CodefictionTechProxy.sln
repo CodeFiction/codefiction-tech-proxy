@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodefictionTech.Proxy.Core.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodefictionTech.Proxy.Tests", "Tests\CodefictionTech.Proxy.Tests\CodefictionTech.Proxy.Tests.csproj", "{4D6BC985-AC0D-4AA6-91CE-CD25B9677F64}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{9ACD0F6B-81E7-4572-8AF3-B811D0E3B495}"
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{AE0E8061-9939-4DC4-8384-E83D0890B200}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,10 +37,10 @@ Global
 		{4D6BC985-AC0D-4AA6-91CE-CD25B9677F64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D6BC985-AC0D-4AA6-91CE-CD25B9677F64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D6BC985-AC0D-4AA6-91CE-CD25B9677F64}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9ACD0F6B-81E7-4572-8AF3-B811D0E3B495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9ACD0F6B-81E7-4572-8AF3-B811D0E3B495}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9ACD0F6B-81E7-4572-8AF3-B811D0E3B495}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9ACD0F6B-81E7-4572-8AF3-B811D0E3B495}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE0E8061-9939-4DC4-8384-E83D0890B200}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE0E8061-9939-4DC4-8384-E83D0890B200}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE0E8061-9939-4DC4-8384-E83D0890B200}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE0E8061-9939-4DC4-8384-E83D0890B200}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 // Arguments
 string target = Argument("target", "Default");
-string dockerImageName = Argument("imagename", string.Empty);
+string dockerImageName = Argument("imagename", "cfProxy");
 string version = Argument("targetversion", "1.0.0");
 string bucketName = Argument("bucketname", "codefiction-tech-proxy-lambda");
 bool taintApiDeployment = Argument<bool>("taintapigateway", false);
@@ -132,19 +132,21 @@ Task("Init-Terraform")
     });
 
 Task("Docker-Build")
-    .IsDependentOn("Test")
-    .IsDependentOn("Publish")
+    .IsDependentOn("Compile")
     .Does(() =>
     {
-        // Information(dockerImageName);
-        // Information(publishFolder);
+        string imageName = GetDockerImageName();
+        string dockerFilePath = Path.Combine(cfProxyDir.FullPath, "Dockerfile");
 
-        // DockerImageBuildSettings settings = new DockerImageBuildSettings();
-        // settings.WorkingDirectory = "./src/CodefictionTech.Proxy";
-        // settings.File = "./Dockerfile";
-        // settings.Tag = new [] {dockerImageName};
+        Information(imageName);
+        Information(dockerFilePath);
 
-        // DockerBuild(settings, ".");
+        DockerImageBuildSettings settings = new DockerImageBuildSettings();
+        settings.WorkingDirectory = "./src";
+        settings.File = dockerFilePath;
+        settings.Tag = new [] {imageName};
+
+        DockerBuild(settings, ".");
     });
 
 Task("Update-Version")
@@ -209,4 +211,9 @@ private string GetProjectVersion(string csprojPath = null)
 private string GetPackageName()
 {
     return $"{packageName}-{GetProjectVersion()}.zip";     
+}
+
+private string GetDockerImageName()
+{
+    return $"{dockerImageName.ToLowerInvariant()}-{configuration.ToLowerInvariant()}:{GetProjectVersion()}";
 }

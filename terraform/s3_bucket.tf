@@ -25,7 +25,7 @@ resource "aws_s3_bucket_object" "lambda_package" {
   bucket = "${var.bucket_name}"
   key = "${var.package_name}"
   source = "${var.package_path}"
-  etag = "${md5(file(var.package_path))}"
+  etag = "${md5(file(var.package_name))}"
 
   depends_on = [
       "aws_s3_bucket.codefiction_tech_proxy-s3"

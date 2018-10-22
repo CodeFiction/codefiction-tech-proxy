@@ -14,6 +14,7 @@
     <PackageReference Include="Microsoft.AspNetCore.App" Version="2.1.0" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.6" />
     <PackageReference Include="Amazon.Lambda.AspNetCoreServer" Version="2.1.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.0.1916590" />
   </ItemGroup>
 
   <ItemGroup>

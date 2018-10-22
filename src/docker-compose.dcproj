@@ -3,7 +3,7 @@
   <PropertyGroup Label="Globals">
     <ProjectVersion>2.1</ProjectVersion>
     <DockerTargetOS>Linux</DockerTargetOS>
-    <ProjectGuid>9acd0f6b-81e7-4572-8af3-b811d0e3b495</ProjectGuid>
+    <ProjectGuid>ae0e8061-9939-4dc4-8384-e83d0890b200</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
     <DockerServiceName>codefictiontech.proxy</DockerServiceName>

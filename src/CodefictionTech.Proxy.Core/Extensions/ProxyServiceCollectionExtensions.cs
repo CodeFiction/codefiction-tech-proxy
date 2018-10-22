@@ -9,24 +9,24 @@ namespace CodefictionTech.Proxy.Core.Extensions
 {
     public static class ProxyServiceCollectionExtensions
     {
-        public static IServiceCollection AddProxy(this IServiceCollection services, Action<HttpClientHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null)
+        public static IServiceCollection AddProxy(this IServiceCollection services, Func<HttpMessageHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null)
         {
             return AddProxy<HttpRequestService, WebSocketRequestService>(services, customClientHandlerSetupAction, webSocketOptionsSetupAction);
         }
 
-        public static IServiceCollection AddProxyWithCustomHttpService<THttpRequestService>(this IServiceCollection services, Action<HttpClientHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null)
+        public static IServiceCollection AddProxyWithCustomHttpService<THttpRequestService>(this IServiceCollection services, Func<HttpMessageHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null)
             where THttpRequestService : class, IHttpRequestService
         {
             return AddProxy<THttpRequestService, WebSocketRequestService>(services, customClientHandlerSetupAction, webSocketOptionsSetupAction);
         }
 
-        public static IServiceCollection AddProxyWithCustomWebSocketService<TWebSocketService>(this IServiceCollection services, Action<HttpClientHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null)
+        public static IServiceCollection AddProxyWithCustomWebSocketService<TWebSocketService>(this IServiceCollection services, Func<HttpMessageHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null)
             where TWebSocketService : class, IWebSocketRequestService
         {
             return AddProxy<HttpRequestService, TWebSocketService>(services, customClientHandlerSetupAction, webSocketOptionsSetupAction);
         }
 
-        public static IServiceCollection AddProxy<THttpRequestService, TWebSocketService>(this IServiceCollection services, Action<HttpClientHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null) 
+        public static IServiceCollection AddProxy<THttpRequestService, TWebSocketService>(this IServiceCollection services, Func<HttpMessageHandler> customClientHandlerSetupAction = null, Action<WebSocketOptions> webSocketOptionsSetupAction = null) 
             where  THttpRequestService : class, IHttpRequestService 
             where TWebSocketService : class, IWebSocketRequestService
         {
@@ -45,19 +45,20 @@ namespace CodefictionTech.Proxy.Core.Extensions
 
             services.AddHttpClient<IHttpRequestService, THttpRequestService>().ConfigurePrimaryHttpMessageHandler(() =>
             {
-                var clientHandler = new HttpClientHandler();
+                HttpMessageHandler httpMessageHandler = null;
 
                 if (customClientHandlerSetupAction == null)
                 {
-                    clientHandler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
+                    httpMessageHandler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
                 }
                 else
                 {
-                    customClientHandlerSetupAction(clientHandler);
+                    httpMessageHandler = customClientHandlerSetupAction();
                 }
 
-                return clientHandler;
+                return httpMessageHandler;
             });
+
 
             return services;
         }

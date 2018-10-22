@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using System.Net.Http;
 using CodefictionTech.Proxy.Core.Extensions;
 using CodefictionTech.Proxy.Services;
 using Microsoft.AspNetCore.Builder;
@@ -22,11 +23,16 @@ namespace CodefictionTech.Proxy
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddProxyWithCustomHttpService<CodefictionHttpRequestService>(handler =>
+                .AddProxyWithCustomHttpService<CodefictionHttpRequestService>(() =>
                 {
-                    handler.AllowAutoRedirect = false;
-                    handler.UseCookies = false;
-                    handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                    var handler = new HttpClientHandler
+                    {
+                        AllowAutoRedirect = false,
+                        UseCookies = false,
+                        AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+                    };
+
+                    return handler;
                 })
                 .AddResponseCompression()
                 .AddMvc();
@@ -51,11 +57,13 @@ namespace CodefictionTech.Proxy
                 x.AllowAnyOrigin();
             });
 
+            string proxyUrl = Configuration["ProxyUrl"];
+
             app.UseResponseCompression()
                 .UseHttpsRedirection()
                 .UseMvc()
                 .UseWebSockets()
-                .RunProxy(new Uri("https://codefiction.simplecast.fm/"));
+                .RunProxy(new Uri(proxyUrl));
         }
     }
 }
