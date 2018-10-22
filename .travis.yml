@@ -4,7 +4,7 @@ dist: trusty
 env:  
   - CLI_VERSION=latest
 mono: none
-dotnet: 2.1.400
+dotnet: 2.1.403
 os:  
   - linux
 branches:  
