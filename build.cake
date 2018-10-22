@@ -66,15 +66,19 @@ Task("Publish")
         DotNetCorePublish(cfProxyProj, publishSettings);
     });
 
-Task("Package")
+Task("Package-AwsLambda")
     .Description("Zips up Codefiction proxy web app built binaries for aws lambda")
-    .IsDependentOn("Publish")
     .Does(() =>
     {
         string packageNameVersion = GetPackageName();
 
         var files = GetFiles(cfProxyPublishDir + "/**/*");
         var outputPath = Path.Combine(terraformDir.FullPath, packageNameVersion);
+
+        StartProcess("dotnet", new ProcessSettings {
+            Arguments = $"lambda package --framework {netCoreTarget} -o {outputPath} -c {configuration}",
+            WorkingDirectory = cfProxyDir
+        });
 
         // TODO : add general cleaning task
         if(FileExists(outputPath))
@@ -90,7 +94,7 @@ Task("Package")
 Task("Publish-AwsLambda")
     .Description("Publish zip file to AWS Lamda and configure AWS API Gateway")
     .IsDependentOn("Init-Terraform")
-    .IsDependentOn("Package")
+    .IsDependentOn("Package-AwsLambda")
     .Does(() =>
     {
         if(taintApiDeployment)
